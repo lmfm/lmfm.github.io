@@ -1,20 +1,51 @@
-let initialMatrix =  []
-
-let matrix = []
+let initialMatrix =  [];
+let matrix = [];
+let startedGame = false;
+let totalSeconds = 0;
 
 let board = document.querySelector('.board');
+let header = document.querySelector('.header');
+let timer = document.querySelector('.timer');
 
-size = 3
+let size = 0;
 
-initialMatrix = Array.from({ length: size }, () => Array(size));
-matrix = Array.from({ length: size }, () => Array(size));
+addButtonEvents();
 
-generateMatrix(size);
 
-drawTokens();
-addEventListeners();
+//startGame();
+
+
+function addButtonEvents() {
+    let button = document.querySelector('.button');
+    button.addEventListener('click', startGame);
+}
+
+function initializeGlobals() {
+    startedGame = true;
+    totalSeconds = 0;
+    size = document.querySelector('.selectBoardSize').value;
+}
+
+function startGame() {
+    initializeGlobals();
+    generateMatrix(size);
+    drawTokens();
+    addEventListeners();
+    updateTimer();
+}
+
+function loopGame(element, actualPosition, emptyPosition, movement) {
+    updateMatrix(element, actualPosition, emptyPosition, movement);
+    drawTokens();
+    addEventListeners();
+    if (compareMatrix()) {
+        startedGame = false;
+        board.innerHTML += `<div class='win'>You Win !!!</div>`
+    }
+}
 
 function drawTokens() {
+    board.style.setProperty("--columns", size);
     board.innerHTML='';
     matrix.forEach(row => row.forEach(element => {
         if( element == ''){
@@ -32,9 +63,7 @@ function addEventListeners(){
             let emptyPosition = searchPosition('');
             let movement = nextMovement(actualPosition, emptyPosition);
             if (movement != 'noMove') {
-                updateMatrix(token.innerText, actualPosition, emptyPosition, movement);
-                drawTokens();
-                addEventListeners();
+                loopGame(token.innerText, actualPosition, emptyPosition, movement);
             }
         }))
 }
@@ -80,6 +109,11 @@ function updateMatrix(element, actualPosition, emptyPosition, movement) {
 }
 
 function generateMatrix(dimension) {
+    console.log('Dimension: ' + dimension);
+    // Initialize Matrix size
+    initialMatrix = Array.from({ length: dimension }, () => Array(dimension));
+    matrix = Array.from({ length: dimension }, () => Array(dimension));
+
     // Create a new array with all the elements.
     let array = [];
     numElements = (dimension * dimension)-1;
@@ -98,7 +132,7 @@ function generateMatrix(dimension) {
     }
 
     // Unorder the array.
-    array.sort(()=>Math.random()-0.5);
+    //array.sort(()=>Math.random()-0.5);
 
     // Compose the matrix with the elements of the unordered array.
     element = 0;
@@ -112,6 +146,27 @@ function generateMatrix(dimension) {
     console.log('Array: ' + array);
     console.log('initialMatrix: ' + initialMatrix);
     console.log('matrix: ' + matrix);
-    
-    
+}
+
+function compareMatrix() {
+    let equalMatrix = true;
+    matrix.forEach((row, rowIndex) => row.forEach((element, columnIndex) => {
+        if (element != initialMatrix[rowIndex][columnIndex]) {
+            equalMatrix = false;
+        }
+    }))
+    return equalMatrix;
+}
+
+
+function updateTimer(){
+    if (startedGame) {
+        hours = Math.trunc(totalSeconds/3600);
+        minutes = Math.trunc((totalSeconds-(hours*3600))/60);
+        seconds = Math.trunc((totalSeconds-((hours*3600)+(minutes*60))));
+        time = hours.toString().padStart(2,'0')+':'+minutes.toString().padStart(2,'0')+':'+seconds.toString().padStart(2,'0');
+        timer.innerHTML = 'Time: ' + time;
+        totalSeconds++;
+        setTimeout('updateTimer();', 1000);    
+    }
 }
